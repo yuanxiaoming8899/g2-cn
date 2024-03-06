@@ -1,228 +1,259 @@
-<img src="https://raw.githubusercontent.com/wiki/synthetos/g2/images/g2core.png" width="300" height="129" alt="g2core">
-
-[![Build Status](https://travis-ci.org/synthetos/g2.svg?branch=edge)](https://travis-ci.org/synthetos/g2)
-
-# What it is
-
-g2core is a 9 axes (XYZABC+UVW) motion control system designed for high-performance on small to mid-sized machines.
-
-* CNC
-* 3D printing
-* Laser cutting
-* Robotics
-
-Our default target is the [Arduino Due](https://store.arduino.cc/arduino-due), though it can also be used with other boards.
-
-Some features:
-
-* 9 axis motion (XYZABC+UVW).
-  * **Note** - UVW is only in the `edge` branch for now.
-* Jerk controlled motion for acceleration planning (3rd order motion planning)
-* Status displays ('?' character)
-* XON/XOFF and RTS/CTS protocol over USB serial
-* RESTful interface using JSON
-
-# Mailing List
-
-For both user and developer discussions of g2core, we recently created a mailing list:
-
-* https://lists.links.org/mailman/listinfo/g2core
-
-Please feel welcome to join in. :smile:
-
-# g2core - Edge Branch
-
-G2 [Edge](https://github.com/synthetos/g2/tree/edge) is the branch for beta testing new features under development. New features are developed in feature branches and merged into the edge branch. Periodically edge is promoted to (stable) master.
-
-Edge is for the adventurous. It is not guaranteed to be stable, but we do our best to achieve this. For production uses we recommend using the [Master branch](https://github.com/synthetos/g2/tree/master).
-
-## Firmware Build 101 `{fb:101.xx}`
-### Feature Enhancements
-New features added. See linked issues and pull requests for details
-- Added [UVW axes](https://github.com/synthetos/g2/wiki/9-Axis-UVW-Operation) for 9 axis control. [See also: Issue 304](https://github.com/synthetos/g2/issues/304)
-- Added [Enhanced Feedhold Functions](https://github.com/synthetos/g2/wiki/Feedhold,-Resume,-and-Other-Simple-Commands)
-- Added explicit [Job Kill  ^d](https://github.com/synthetos/g2/wiki/Feedhold,-Resume,-and-Other-Simple-Commands#job-kill) - has the effect of an M30 (program end)
-- Documented [Communications Startup Tests](https://github.com/synthetos/g2/wiki/g2core-Communications#enqack---checking-for-clean-startup)
-
-
-### Internal Changes and Bug Fixes
-Many things have changed in the internals for this very large pull request. The following list highlights some of these changes but is not meant to be comprehensive.
-- Added explicit typing and type testing to JSON variables.
-- As part of the above, 32bit integers are not float casts, and therefore retain full accuracy. Line numbers may now reliably go to 2,000,000,000
-- Movement towards getters and setters as initial stage of refactoring the Big Table :)
-- Bugfix: Fixed root finding problem in feedhold exit velocity calculation
-- Bugfix: fixed bug in B and C axis assignment in coordinate rotation code
-- PR #334 A, B, C axes radius defaults to use motors 4, 5, & 6
-- PR #336, Issue #336 partial solution to coolant initialization
-- PR #299, Issue #298 fix for reading nested JSON value errors
-
-## Feature Enhancements
-
-### Firmware Build 101 `{fb:101.xx}`
-
-The fb:101 release is a mostly internal change from the fb:100 branches. Here are the highlights, more detailed on each item are further below:
-- Updated motion execution at the segment (smallest) level to be linear velocity instead of constant velocity, resulting in notably smoother motion and more faithful execution of the jerk limitations. (Incidentally, the sound of the motors is also slightly quieter and more "natural.")
-- Updated JT (Junction integration Time, a.k.a. "cornering") handling to be more optimized, and to treat the last move as a corner to a move with no active axes. This allows a non-zero stopping velocity based on the allowed jerk and active JT value.
-- Probing enhancements.
-- Added support for gQuintic (rev B) and fixed issues with gQuadratic board support. (This mostly happened in Motate.)
-- Temperature control enhancements
-  - Temperature inputs are configured differently at compile time. (Ongoing.)
-  - PID control has been adjusted to PID+FF (Proportional, Integral, and Derivative, with Feed Forward). In this case, the feed forward is a multiplier of the difference between the current temperature and the ambient temperature. Since there is no temperature sensor for ambient temperature at the moment, it uses an idealized room temperature of 21ºC.
-- More complete support for TMC2130 by adding more JSON controls for live feedback and configuration.
-- Initial support for Core XY kinematics.
-- Boards are in more control of the planner settings.
-- Experimental setting to have traverse (G0) use the 'high jerk' axis settings.
-- Outputs are now configured at board initialization (and later) to honor the settings more faithfully. This includes setting the pin high or low as soon as possible.
-
-### Firmware Build 100 `{fb:100.xx}`
-
-The fb:100 release is a major change from the fb:089 and earlier branches. It represents about a year of development and has many major feature enhancements summarized below. These are described in more detail in the rest of this readme and the linked wiki pages.
-- New Gcode and CNC features
-- 3d printing support, including [Marlin Compatibility](https://github.com/synthetos/g2/wiki/Marlin-Compatibility)
-- GPIO system enhancements
-- Planner enhancements and other operating improvements for high-speed operation
-- Initial support for new processors, including the ARM M7
-
-### Project Changes
-
-The project is now called g2core (even if the repo remains g2). As of this release the g2core code base is split from the TinyG code base. TinyG will continue to be supported for the Xmega 8-bit platform, and new features will be added, specifically as related to continued support for CNC milling applications. The g2core project will focus on various ARM platforms, as it currently does, and add functions that are not possible in the 8-bit platform.
-
-In this release the Motate hardware abstraction layer has been split into a separate project and is included in g2core as a git submodule. This release also provides better support for cross platform / cross target compilation. A summary of project changes is provided below, with details in this readme and linked wiki pages.
-- Motate submodule
-- Cross platform / cross target support
-- Multiple processor support - ARM M3, M4, M7 cores
-- Device tree / multiple motor types
-- Simplified host-to-board communication protocol (line mode)
-- NodeJS host module for host-to-board communications
-
-### More To Come
-The fb:100 release is the base for  number of other enhancements in the works and planned, including:
-- Further enhancements to GPIO system
-- Additional JSON processing and UI support
-- Enhancements to 3d printer support, including a simplified g2 printer dialect
-
-## Changelog for Edge Branch
-
-### Edge branch, Build 101.xx
-
-This build is primarily focused on support for the new boards based on the Atmel SamS70 family, as well as refining the motion control and long awaited feature enhancements. This list will be added to as development proceed.s
-
-### Edge branch, Build 100.xx
-
-Build 100.xx has a number of changes, mostly related to extending Gcode support and supporting 3D printing using g2core. These include temperature controls, auto-bed leveling, planner performance improvements and active JSON comments in Gcode.
-
-Communications has advanced to support a linemode protocol to greatly simplify host communications and flow control for very rapid Gcode streams. Please read the Communications pages for details. Also see the NodeJS communications module docs if you are building a UI or host controller.
-
-Build 100.xx also significantly advances the project structure to support multiple processor architectures, hardware configurations and machine configurations in the same code base. Motate has been cleaved off into its own subproject. We recommend carefully reading the Dev pages if you are coding or compiling.
-
-#### Functional Changes:
-
-*Note: Click the header next to the arrow to expand and display the details.*
-
-<details><summary><strong>Linear-Velocity Segment Execution</strong></summary>
-
-  - The overall motion is still jerk-controlled and the computation of motion remains largely the same (although slightly simplified). At the smallest level above raw steps (what we call "segments," which are nominally 0.25ms to 1ms in duration) we previously executed the steps at a constant velocity. We now execute them with a linear change from a start velocity to an end velocity. This results in smoother motion that is more faithful to the planned jerk constraints.
-  - This changed the way the forward differences are used to compute the segment speeds as well. Previously, we were computing the curve at the midpoint (time-wise) of each segment in order to get the median velocity. Now that we want the start and end velocity of each segment we only compute the end (time-wise) of each segment, and use that again later as the start-point of the next segment.
+<div class="Box-sc-g0xbh4-0 bJMeLZ js-snippet-clipboard-copy-unpositioned" data-hpc="true"><article class="markdown-body entry-content container-lg" itemprop="text"><p dir="auto"><a target="_blank" rel="noopener noreferrer nofollow" href="https://raw.githubusercontent.com/wiki/synthetos/g2/images/g2core.png"><img src="https://raw.githubusercontent.com/wiki/synthetos/g2/images/g2core.png" width="300" height="129" alt="g2核心" style="max-width: 100%;"></a></p>
+<p dir="auto"><a href="https://travis-ci.org/synthetos/g2" rel="nofollow"><img src="https://camo.githubusercontent.com/5974f733c38668d8ce1b348a51e26dbdf346485222674bb9f09ff20c3f70ca16/68747470733a2f2f7472617669732d63692e6f72672f73796e746865746f732f67322e7376673f6272616e63683d65646765" alt="构建状态" data-canonical-src="https://travis-ci.org/synthetos/g2.svg?branch=edge" style="max-width: 100%;"></a></p>
+<div class="markdown-heading" dir="auto"><h1 tabindex="-1" class="heading-element" dir="auto"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">这是什么</font></font></h1><a id="user-content-what-it-is" class="anchor" aria-label="永久链接： 这是什么" href="#what-it-is"><svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path d="m7.775 3.275 1.25-1.25a3.5 3.5 0 1 1 4.95 4.95l-2.5 2.5a3.5 3.5 0 0 1-4.95 0 .751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018 1.998 1.998 0 0 0 2.83 0l2.5-2.5a2.002 2.002 0 0 0-2.83-2.83l-1.25 1.25a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042Zm-4.69 9.64a1.998 1.998 0 0 0 2.83 0l1.25-1.25a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042l-1.25 1.25a3.5 3.5 0 1 1-4.95-4.95l2.5-2.5a3.5 3.5 0 0 1 4.95 0 .751.751 0 0 1-.018 1.042.751.751 0 0 1-1.042.018 1.998 1.998 0 0 0-2.83 0l-2.5 2.5a1.998 1.998 0 0 0 0 2.83Z"></path></svg></a></div>
+<p dir="auto"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">g2core 是一款 9 轴 (XYZABC+UVW) 运动控制系统，专为中小型机器的高性能而设计。</font></font></p>
+<ul dir="auto">
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">数控系统</font></font></li>
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">3D打印</font></font></li>
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">激光切割</font></font></li>
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">机器人技术</font></font></li>
+</ul>
+<p dir="auto"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">我们的默认目标是</font></font><a href="https://store.arduino.cc/arduino-due" rel="nofollow"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">Arduino Due</font></font></a><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">，尽管它也可以与其他板一起使用。</font></font></p>
+<p dir="auto"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">一些特点：</font></font></p>
+<ul dir="auto">
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">9轴运动（XYZABC+UVW）。
+</font></font><ul dir="auto">
+<li><strong><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">注意</font></font></strong><font style="vertical-align: inherit;"></font><code>edge</code><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">- UVW目前</font><font style="vertical-align: inherit;">仅在分支中。</font></font></li>
+</ul>
+</li>
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">用于加速规划的加加速度控制运动（三阶运动规划）</font></font></li>
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">状态显示（“？”字符）</font></font></li>
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">USB 串行上的 XON/XOFF 和 RTS/CTS 协议</font></font></li>
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">使用 JSON 的 RESTful 接口</font></font></li>
+</ul>
+<div class="markdown-heading" dir="auto"><h1 tabindex="-1" class="heading-element" dir="auto"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">邮件列表</font></font></h1><a id="user-content-mailing-list" class="anchor" aria-label="永久链接：邮件列表" href="#mailing-list"><svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path d="m7.775 3.275 1.25-1.25a3.5 3.5 0 1 1 4.95 4.95l-2.5 2.5a3.5 3.5 0 0 1-4.95 0 .751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018 1.998 1.998 0 0 0 2.83 0l2.5-2.5a2.002 2.002 0 0 0-2.83-2.83l-1.25 1.25a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042Zm-4.69 9.64a1.998 1.998 0 0 0 2.83 0l1.25-1.25a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042l-1.25 1.25a3.5 3.5 0 1 1-4.95-4.95l2.5-2.5a3.5 3.5 0 0 1 4.95 0 .751.751 0 0 1-.018 1.042.751.751 0 0 1-1.042.018 1.998 1.998 0 0 0-2.83 0l-2.5 2.5a1.998 1.998 0 0 0 0 2.83Z"></path></svg></a></div>
+<p dir="auto"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">对于 g2core 的用户和开发人员讨论，我们最近创建了一个邮件列表：</font></font></p>
+<ul dir="auto">
+<li><a href="https://lists.links.org/mailman/listinfo/g2core" rel="nofollow"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">https://lists.links.org/mailman/listinfo/g2core</font></font></a></li>
+</ul>
+<p dir="auto"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">欢迎大家踊跃参加。😄</font></font></p>
+<div class="markdown-heading" dir="auto"><h1 tabindex="-1" class="heading-element" dir="auto"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">g2core - 边缘分支</font></font></h1><a id="user-content-g2core---edge-branch" class="anchor" aria-label="永久链接：g2core - 边缘分支" href="#g2core---edge-branch"><svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path d="m7.775 3.275 1.25-1.25a3.5 3.5 0 1 1 4.95 4.95l-2.5 2.5a3.5 3.5 0 0 1-4.95 0 .751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018 1.998 1.998 0 0 0 2.83 0l2.5-2.5a2.002 2.002 0 0 0-2.83-2.83l-1.25 1.25a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042Zm-4.69 9.64a1.998 1.998 0 0 0 2.83 0l1.25-1.25a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042l-1.25 1.25a3.5 3.5 0 1 1-4.95-4.95l2.5-2.5a3.5 3.5 0 0 1 4.95 0 .751.751 0 0 1-.018 1.042.751.751 0 0 1-1.042.018 1.998 1.998 0 0 0-2.83 0l-2.5 2.5a1.998 1.998 0 0 0 0 2.83Z"></path></svg></a></div>
+<p dir="auto"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">G2 </font></font><a href="https://github.com/synthetos/g2/tree/edge"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">Edge</font></font></a><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">是用于测试正在开发的新功能的分支。</font><font style="vertical-align: inherit;">新功能在功能分支中开发并合并到边缘分支中。</font><font style="vertical-align: inherit;">定期将边缘提升为（稳定）主控。</font></font></p>
+<p dir="auto"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">Edge 适合喜欢冒险的人。</font><font style="vertical-align: inherit;">不能保证稳定，但我们会尽力实现这一点。</font><font style="vertical-align: inherit;">对于生产用途，我们建议使用</font></font><a href="https://github.com/synthetos/g2/tree/master"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">Master 分支</font></font></a><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">。</font></font></p>
+<div class="markdown-heading" dir="auto"><h2 tabindex="-1" class="heading-element" dir="auto"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">固件版本 101</font></font><code>{fb:101.xx}</code></h2><a id="user-content-firmware-build-101-fb101xx" class="anchor" aria-label="永久链接：固件版本 101 {fb:101.xx}" href="#firmware-build-101-fb101xx"><svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path d="m7.775 3.275 1.25-1.25a3.5 3.5 0 1 1 4.95 4.95l-2.5 2.5a3.5 3.5 0 0 1-4.95 0 .751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018 1.998 1.998 0 0 0 2.83 0l2.5-2.5a2.002 2.002 0 0 0-2.83-2.83l-1.25 1.25a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042Zm-4.69 9.64a1.998 1.998 0 0 0 2.83 0l1.25-1.25a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042l-1.25 1.25a3.5 3.5 0 1 1-4.95-4.95l2.5-2.5a3.5 3.5 0 0 1 4.95 0 .751.751 0 0 1-.018 1.042.751.751 0 0 1-1.042.018 1.998 1.998 0 0 0-2.83 0l-2.5 2.5a1.998 1.998 0 0 0 0 2.83Z"></path></svg></a></div>
+<div class="markdown-heading" dir="auto"><h3 tabindex="-1" class="heading-element" dir="auto"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">功能增强</font></font></h3><a id="user-content-feature-enhancements" class="anchor" aria-label="永久链接：功能增强" href="#feature-enhancements"><svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path d="m7.775 3.275 1.25-1.25a3.5 3.5 0 1 1 4.95 4.95l-2.5 2.5a3.5 3.5 0 0 1-4.95 0 .751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018 1.998 1.998 0 0 0 2.83 0l2.5-2.5a2.002 2.002 0 0 0-2.83-2.83l-1.25 1.25a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042Zm-4.69 9.64a1.998 1.998 0 0 0 2.83 0l1.25-1.25a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042l-1.25 1.25a3.5 3.5 0 1 1-4.95-4.95l2.5-2.5a3.5 3.5 0 0 1 4.95 0 .751.751 0 0 1-.018 1.042.751.751 0 0 1-1.042.018 1.998 1.998 0 0 0-2.83 0l-2.5 2.5a1.998 1.998 0 0 0 0 2.83Z"></path></svg></a></div>
+<p dir="auto"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">添加了新功能。</font><font style="vertical-align: inherit;">有关详细信息，请参阅链接的问题和拉取请求</font></font></p>
+<ul dir="auto">
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">添加</font></font><a href="https://github.com/synthetos/g2/wiki/9-Axis-UVW-Operation"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">UVW 轴</font></font></a><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">以实现 9 轴控制。</font></font><a href="https://github.com/synthetos/g2/issues/304" data-hovercard-type="issue" data-hovercard-url="/synthetos/g2/issues/304/hovercard"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">另请参阅：问题 304</font></font></a></li>
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">添加了</font></font><a href="https://github.com/synthetos/g2/wiki/Feedhold,-Resume,-and-Other-Simple-Commands"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">增强的进给功能</font></font></a></li>
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">添加了明确的</font></font><a href="https://github.com/synthetos/g2/wiki/Feedhold,-Resume,-and-Other-Simple-Commands#job-kill"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">Job Kill ^d</font></font></a><font style="vertical-align: inherit;"><font style="vertical-align: inherit;"> - 具有 M30 的效果（程序结束）</font></font></li>
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">记录的</font></font><a href="https://github.com/synthetos/g2/wiki/g2core-Communications#enqack---checking-for-clean-startup"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">通信启动测试</font></font></a></li>
+</ul>
+<div class="markdown-heading" dir="auto"><h3 tabindex="-1" class="heading-element" dir="auto"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">内部变更和错误修复</font></font></h3><a id="user-content-internal-changes-and-bug-fixes" class="anchor" aria-label="永久链接：内部更改和错误修复" href="#internal-changes-and-bug-fixes"><svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path d="m7.775 3.275 1.25-1.25a3.5 3.5 0 1 1 4.95 4.95l-2.5 2.5a3.5 3.5 0 0 1-4.95 0 .751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018 1.998 1.998 0 0 0 2.83 0l2.5-2.5a2.002 2.002 0 0 0-2.83-2.83l-1.25 1.25a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042Zm-4.69 9.64a1.998 1.998 0 0 0 2.83 0l1.25-1.25a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042l-1.25 1.25a3.5 3.5 0 1 1-4.95-4.95l2.5-2.5a3.5 3.5 0 0 1 4.95 0 .751.751 0 0 1-.018 1.042.751.751 0 0 1-1.042.018 1.998 1.998 0 0 0-2.83 0l-2.5 2.5a1.998 1.998 0 0 0 0 2.83Z"></path></svg></a></div>
+<p dir="auto"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">对于这个非常大的拉取请求，内部发生了很多变化。</font><font style="vertical-align: inherit;">以下列表重点介绍了其中一些更改，但并不全面。</font></font></p>
+<ul dir="auto">
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">向 JSON 变量添加了显式类型和类型测试。</font></font></li>
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">作为上述内容的一部分，32 位整数不是浮点类型转换，因此保留完整的精度。</font><font style="vertical-align: inherit;">行数现在可以可靠地达到 2,000,000,000</font></font></li>
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">作为重构大表的初始阶段，转向 getter 和 setter :)</font></font></li>
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">错误修复：修复了进给出口速度计算中的求根问题</font></font></li>
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">错误修复：修复了坐标旋转代码中 B 轴和 C 轴分配的错误</font></font></li>
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">PR #334 A、B、C 轴半径默认使用电机 4、5、6</font></font></li>
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">PR #336，问题 #336 冷却剂初始化的部分解决方案</font></font></li>
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">PR #299、问题 #298 修复了读取嵌套 JSON 值错误的问题</font></font></li>
+</ul>
+<div class="markdown-heading" dir="auto"><h2 tabindex="-1" class="heading-element" dir="auto"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">功能增强</font></font></h2><a id="user-content-feature-enhancements-1" class="anchor" aria-label="永久链接：功能增强" href="#feature-enhancements-1"><svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path d="m7.775 3.275 1.25-1.25a3.5 3.5 0 1 1 4.95 4.95l-2.5 2.5a3.5 3.5 0 0 1-4.95 0 .751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018 1.998 1.998 0 0 0 2.83 0l2.5-2.5a2.002 2.002 0 0 0-2.83-2.83l-1.25 1.25a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042Zm-4.69 9.64a1.998 1.998 0 0 0 2.83 0l1.25-1.25a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042l-1.25 1.25a3.5 3.5 0 1 1-4.95-4.95l2.5-2.5a3.5 3.5 0 0 1 4.95 0 .751.751 0 0 1-.018 1.042.751.751 0 0 1-1.042.018 1.998 1.998 0 0 0-2.83 0l-2.5 2.5a1.998 1.998 0 0 0 0 2.83Z"></path></svg></a></div>
+<div class="markdown-heading" dir="auto"><h3 tabindex="-1" class="heading-element" dir="auto"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">固件版本 101</font></font><code>{fb:101.xx}</code></h3><a id="user-content-firmware-build-101-fb101xx-1" class="anchor" aria-label="永久链接：固件版本 101 {fb:101.xx}" href="#firmware-build-101-fb101xx-1"><svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path d="m7.775 3.275 1.25-1.25a3.5 3.5 0 1 1 4.95 4.95l-2.5 2.5a3.5 3.5 0 0 1-4.95 0 .751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018 1.998 1.998 0 0 0 2.83 0l2.5-2.5a2.002 2.002 0 0 0-2.83-2.83l-1.25 1.25a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042Zm-4.69 9.64a1.998 1.998 0 0 0 2.83 0l1.25-1.25a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042l-1.25 1.25a3.5 3.5 0 1 1-4.95-4.95l2.5-2.5a3.5 3.5 0 0 1 4.95 0 .751.751 0 0 1-.018 1.042.751.751 0 0 1-1.042.018 1.998 1.998 0 0 0-2.83 0l-2.5 2.5a1.998 1.998 0 0 0 0 2.83Z"></path></svg></a></div>
+<p dir="auto"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">fb:101 版本主要是 fb:100 分支的内部更改。</font><font style="vertical-align: inherit;">以下是重点内容，每个项目的更多详细信息如下：</font></font></p>
+<ul dir="auto">
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">将分段（最小）级别的运动执行更新为线速度而不是恒定速度，从而使运动更加平滑并更忠实地执行加加速度限制。</font><font style="vertical-align: inherit;">（顺便说一下，电机的声音也稍微安静一些，更“自然”。）</font></font></li>
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">更新了 JT（连接点集成时间，又名“转弯”）处理，使其更加优化，并将最后一个移动视为没有活动轴的移动的拐角。</font><font style="vertical-align: inherit;">这允许基于允许的急动度和有效 JT 值的非零停止速度。</font></font></li>
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">探测增强。</font></font></li>
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">添加了对 gQuintic（版本 B）的支持并修复了 gQuadratic 板支持的问题。</font><font style="vertical-align: inherit;">（这主要发生在莫泰特。）</font></font></li>
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">温度控制增强
+</font></font><ul dir="auto">
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">温度输入在编译时配置不同。</font><font style="vertical-align: inherit;">（正在进行中。）</font></font></li>
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">PID控制已调整为PID+FF（比例、积分和微分，带前馈）。</font><font style="vertical-align: inherit;">在这种情况下，前馈是当前温度与环境温度之差的乘数。</font><font style="vertical-align: inherit;">由于目前没有环境温度的温度传感器，因此使用理想的室温 21°C。</font></font></li>
+</ul>
+</li>
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">通过添加更多用于实时反馈和配置的 JSON 控件，对 TMC2130 提供更完整的支持。</font></font></li>
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">初步支持 Core XY 运动学。</font></font></li>
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">董事会可以更好地控制规划器设置。</font></font></li>
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">实验设置为使移动 (G0) 使用“高加加速度”轴设置。</font></font></li>
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">现在，输出在电路板初始化时（及以后）进行配置，以更忠实地遵循设置。</font><font style="vertical-align: inherit;">这包括尽快将引脚设置为高电平或低电平。</font></font></li>
+</ul>
+<div class="markdown-heading" dir="auto"><h3 tabindex="-1" class="heading-element" dir="auto"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">固件版本 100</font></font><code>{fb:100.xx}</code></h3><a id="user-content-firmware-build-100-fb100xx" class="anchor" aria-label="永久链接：固件版本 100 {fb:100.xx}" href="#firmware-build-100-fb100xx"><svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path d="m7.775 3.275 1.25-1.25a3.5 3.5 0 1 1 4.95 4.95l-2.5 2.5a3.5 3.5 0 0 1-4.95 0 .751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018 1.998 1.998 0 0 0 2.83 0l2.5-2.5a2.002 2.002 0 0 0-2.83-2.83l-1.25 1.25a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042Zm-4.69 9.64a1.998 1.998 0 0 0 2.83 0l1.25-1.25a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042l-1.25 1.25a3.5 3.5 0 1 1-4.95-4.95l2.5-2.5a3.5 3.5 0 0 1 4.95 0 .751.751 0 0 1-.018 1.042.751.751 0 0 1-1.042.018 1.998 1.998 0 0 0-2.83 0l-2.5 2.5a1.998 1.998 0 0 0 0 2.83Z"></path></svg></a></div>
+<p dir="auto"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">fb:100 版本是 fb:089 及更早版本分支的重大更改。</font><font style="vertical-align: inherit;">它经历了大约一年的开发，并具有许多主要功能增强，总结如下。</font><font style="vertical-align: inherit;">本自述文件的其余部分和链接的 wiki 页面对这些内容进行了更详细的描述。</font></font></p>
+<ul dir="auto">
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">新的 Gcode 和 CNC 功能</font></font></li>
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">3D 打印支持，包括</font></font><a href="https://github.com/synthetos/g2/wiki/Marlin-Compatibility"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">Marlin 兼容性</font></font></a></li>
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">GPIO 系统增强</font></font></li>
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">规划器增强功能和其他操作改进以实现高速操作</font></font></li>
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">对新处理器的初步支持，包括 ARM M7</font></font></li>
+</ul>
+<div class="markdown-heading" dir="auto"><h3 tabindex="-1" class="heading-element" dir="auto"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">项目变更</font></font></h3><a id="user-content-project-changes" class="anchor" aria-label="永久链接：项目变更" href="#project-changes"><svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path d="m7.775 3.275 1.25-1.25a3.5 3.5 0 1 1 4.95 4.95l-2.5 2.5a3.5 3.5 0 0 1-4.95 0 .751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018 1.998 1.998 0 0 0 2.83 0l2.5-2.5a2.002 2.002 0 0 0-2.83-2.83l-1.25 1.25a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042Zm-4.69 9.64a1.998 1.998 0 0 0 2.83 0l1.25-1.25a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042l-1.25 1.25a3.5 3.5 0 1 1-4.95-4.95l2.5-2.5a3.5 3.5 0 0 1 4.95 0 .751.751 0 0 1-.018 1.042.751.751 0 0 1-1.042.018 1.998 1.998 0 0 0-2.83 0l-2.5 2.5a1.998 1.998 0 0 0 0 2.83Z"></path></svg></a></div>
+<p dir="auto"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">该项目现在称为 g2core（即使存储库仍然是 g2）。</font><font style="vertical-align: inherit;">从此版本开始，g2core 代码库从 TinyG 代码库中分离出来。</font><font style="vertical-align: inherit;">TinyG 将继续支持 Xmega 8 位平台，并将添加新功能，特别是与 CNC 铣削应用的持续支持相关的功能。</font><font style="vertical-align: inherit;">g2core项目将像目前一样专注于各种ARM平台，并添加8位平台上不可能的功能。</font></font></p>
+<p dir="auto"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">在此版本中，Motate 硬件抽象层已拆分为一个单独的项目，并作为 git 子模块包含在 g2core 中。</font><font style="vertical-align: inherit;">该版本还为跨平台/跨目标编译提供了更好的支持。</font><font style="vertical-align: inherit;">下面提供了项目更改的摘要，本自述文件和链接的 wiki 页面中有详细信息。</font></font></p>
+<ul dir="auto">
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">移动子模块</font></font></li>
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">跨平台/跨目标支持</font></font></li>
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">多处理器支持 - ARM M3、M4、M7 内核</font></font></li>
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">设备树/多种电机类型</font></font></li>
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">简化的主机对板通信协议（线路模式）</font></font></li>
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">用于主机到板通信的 NodeJS 主机模块</font></font></li>
+</ul>
+<div class="markdown-heading" dir="auto"><h3 tabindex="-1" class="heading-element" dir="auto"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">更多即将推出</font></font></h3><a id="user-content-more-to-come" class="anchor" aria-label="永久链接：更多内容即将推出" href="#more-to-come"><svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path d="m7.775 3.275 1.25-1.25a3.5 3.5 0 1 1 4.95 4.95l-2.5 2.5a3.5 3.5 0 0 1-4.95 0 .751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018 1.998 1.998 0 0 0 2.83 0l2.5-2.5a2.002 2.002 0 0 0-2.83-2.83l-1.25 1.25a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042Zm-4.69 9.64a1.998 1.998 0 0 0 2.83 0l1.25-1.25a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042l-1.25 1.25a3.5 3.5 0 1 1-4.95-4.95l2.5-2.5a3.5 3.5 0 0 1 4.95 0 .751.751 0 0 1-.018 1.042.751.751 0 0 1-1.042.018 1.998 1.998 0 0 0-2.83 0l-2.5 2.5a1.998 1.998 0 0 0 0 2.83Z"></path></svg></a></div>
+<p dir="auto"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">fb:100 版本是正在进行和计划中的许多其他增强功能的基础，包括：</font></font></p>
+<ul dir="auto">
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">GPIO系统的进一步增强</font></font></li>
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">额外的 JSON 处理和 UI 支持</font></font></li>
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">增强 3D 打印机支持，包括简化的 g2 打印机语言</font></font></li>
+</ul>
+<div class="markdown-heading" dir="auto"><h2 tabindex="-1" class="heading-element" dir="auto"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">Edge 分支的变更日志</font></font></h2><a id="user-content-changelog-for-edge-branch" class="anchor" aria-label="永久链接：Edge 分支的变更日志" href="#changelog-for-edge-branch"><svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path d="m7.775 3.275 1.25-1.25a3.5 3.5 0 1 1 4.95 4.95l-2.5 2.5a3.5 3.5 0 0 1-4.95 0 .751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018 1.998 1.998 0 0 0 2.83 0l2.5-2.5a2.002 2.002 0 0 0-2.83-2.83l-1.25 1.25a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042Zm-4.69 9.64a1.998 1.998 0 0 0 2.83 0l1.25-1.25a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042l-1.25 1.25a3.5 3.5 0 1 1-4.95-4.95l2.5-2.5a3.5 3.5 0 0 1 4.95 0 .751.751 0 0 1-.018 1.042.751.751 0 0 1-1.042.018 1.998 1.998 0 0 0-2.83 0l-2.5 2.5a1.998 1.998 0 0 0 0 2.83Z"></path></svg></a></div>
+<div class="markdown-heading" dir="auto"><h3 tabindex="-1" class="heading-element" dir="auto"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">边缘分支，构建 101.xx</font></font></h3><a id="user-content-edge-branch-build-101xx" class="anchor" aria-label="永久链接：边缘分支，Build 101.xx" href="#edge-branch-build-101xx"><svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path d="m7.775 3.275 1.25-1.25a3.5 3.5 0 1 1 4.95 4.95l-2.5 2.5a3.5 3.5 0 0 1-4.95 0 .751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018 1.998 1.998 0 0 0 2.83 0l2.5-2.5a2.002 2.002 0 0 0-2.83-2.83l-1.25 1.25a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042Zm-4.69 9.64a1.998 1.998 0 0 0 2.83 0l1.25-1.25a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042l-1.25 1.25a3.5 3.5 0 1 1-4.95-4.95l2.5-2.5a3.5 3.5 0 0 1 4.95 0 .751.751 0 0 1-.018 1.042.751.751 0 0 1-1.042.018 1.998 1.998 0 0 0-2.83 0l-2.5 2.5a1.998 1.998 0 0 0 0 2.83Z"></path></svg></a></div>
+<p dir="auto"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">此版本主要侧重于支持基于 Atmel SamS70 系列的新主板，以及完善运动控制和期待已久的功能增强。</font><font style="vertical-align: inherit;">随着开发的进行，该列表将被添加到其中。</font></font></p>
+<div class="markdown-heading" dir="auto"><h3 tabindex="-1" class="heading-element" dir="auto"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">边缘分支，构建 100.xx</font></font></h3><a id="user-content-edge-branch-build-100xx" class="anchor" aria-label="永久链接：边缘分支，Build 100.xx" href="#edge-branch-build-100xx"><svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path d="m7.775 3.275 1.25-1.25a3.5 3.5 0 1 1 4.95 4.95l-2.5 2.5a3.5 3.5 0 0 1-4.95 0 .751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018 1.998 1.998 0 0 0 2.83 0l2.5-2.5a2.002 2.002 0 0 0-2.83-2.83l-1.25 1.25a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042Zm-4.69 9.64a1.998 1.998 0 0 0 2.83 0l1.25-1.25a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042l-1.25 1.25a3.5 3.5 0 1 1-4.95-4.95l2.5-2.5a3.5 3.5 0 0 1 4.95 0 .751.751 0 0 1-.018 1.042.751.751 0 0 1-1.042.018 1.998 1.998 0 0 0-2.83 0l-2.5 2.5a1.998 1.998 0 0 0 0 2.83Z"></path></svg></a></div>
+<p dir="auto"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">Build 100.xx 有许多变化，主要与扩展 Gcode 支持和支持使用 g2core 的 3D 打印有关。</font><font style="vertical-align: inherit;">其中包括温度控制、自动床调平、规划器性能改进和 Gcode 中的活动 JSON 注释。</font></font></p>
+<p dir="auto"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">通信已取得进展，支持线路模式协议，从而大大简化主机通信和非常快速的 Gcode 流的流量控制。</font><font style="vertical-align: inherit;">请阅读通讯页面了解详细信息。</font><font style="vertical-align: inherit;">如果您正在构建 UI 或主机控制器，另请参阅 NodeJS 通信模块文档。</font></font></p>
+<p dir="auto"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">Build 100.xx 还显着改进了项目结构，以在同一代码库中支持多种处理器架构、硬件配置和机器配置。</font><font style="vertical-align: inherit;">Motate 已被拆分成自己的子项目。</font><font style="vertical-align: inherit;">如果您正在编码或编译，我们建议您仔细阅读开发页面。</font></font></p>
+<div class="markdown-heading" dir="auto"><h4 tabindex="-1" class="heading-element" dir="auto"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">功能变化：</font></font></h4><a id="user-content-functional-changes" class="anchor" aria-label="永久链接：功能变化：" href="#functional-changes"><svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path d="m7.775 3.275 1.25-1.25a3.5 3.5 0 1 1 4.95 4.95l-2.5 2.5a3.5 3.5 0 0 1-4.95 0 .751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018 1.998 1.998 0 0 0 2.83 0l2.5-2.5a2.002 2.002 0 0 0-2.83-2.83l-1.25 1.25a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042Zm-4.69 9.64a1.998 1.998 0 0 0 2.83 0l1.25-1.25a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042l-1.25 1.25a3.5 3.5 0 1 1-4.95-4.95l2.5-2.5a3.5 3.5 0 0 1 4.95 0 .751.751 0 0 1-.018 1.042.751.751 0 0 1-1.042.018 1.998 1.998 0 0 0-2.83 0l-2.5 2.5a1.998 1.998 0 0 0 0 2.83Z"></path></svg></a></div>
+<p dir="auto"><em><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">注意：单击箭头旁边的标题可展开并显示详细信息。</font></font></em></p>
+<details><summary><strong><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">线速度段执行</font></font></strong></summary>
+<ul dir="auto">
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">整体运动仍然是加加速度控制的，并且运动的计算基本保持不变（尽管略有简化）。</font><font style="vertical-align: inherit;">在原始步骤（我们称之为“段”，名义上持续时间为 0.25 毫秒到 1 毫秒）之上的最小级别，我们之前以恒定速度执行这些步骤。</font><font style="vertical-align: inherit;">我们现在以从起始速度到结束速度的线性变化来执行它们。</font><font style="vertical-align: inherit;">这会导致更平滑的运动，更忠实于计划的加加速度约束。</font></font></li>
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">这也改变了使用前向差来计算段速度的方式。</font><font style="vertical-align: inherit;">之前，我们计算每段中点（时间方向）的曲线，以获得中值速度。</font><font style="vertical-align: inherit;">现在我们想要每个段的开始和结束速度，我们只计算每个段的结束（时间方面），并稍后再次使用它作为下一个段的起点。</font></font></li>
+</ul>
 </details>
-
-<details><summary><strong>Probing enhancements</strong></summary>
-
-  - Added `{"prbs":true}` to store the current position as if it were to position of a succesful probe.
-  - Added `{"prbr":true}` to enable and `{"prbr":false}` to enable and disable (respectively) the JSON `{prb:{...}}` report after a probe.
+<details><summary><strong><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">探测增强功能</font></font></strong></summary>
+<ul dir="auto">
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">添加</font></font><code>{"prbs":true}</code><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">用于存储当前位置，就像成功探测的位置一样。</font></font></li>
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">添加以</font><font style="vertical-align: inherit;">在探测后</font></font><code>{"prbr":true}</code><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">启用以及</font></font><code>{"prbr":false}</code><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">启用和禁用（分别）JSON报告。</font></font><code>{prb:{...}}</code><font style="vertical-align: inherit;"></font></li>
+</ul>
 </details>
-
-<details><summary><strong>gQuintic support</strong></summary>
-
-  - Support for the gQuintic rev B was added. Support for rev D will come shortly.
+<details><summary><strong><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">gQuintic 支持</font></font></strong></summary>
+<ul dir="auto">
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">添加了对 gQuintic rev B 的支持。</font><font style="vertical-align: inherit;">对 rev D 的支持很快就会到来。</font></font></li>
+</ul>
 </details>
-
-<details><summary><strong>Temperature control enhancements</strong></summary>
-
-  - Added the following settings defines:
-    - `HAS_TEMPERATURE_SENSOR_1`, `HAS_TEMPERATURE_SENSOR_2`, and `HAS_TEMPERATURE_SENSOR_3`
-    - `EXTRUDER_1_OUTPUT_PIN`, `EXTRUDER_2_OUTPUT_PIN`, and `BED_OUTPUT_PIN`
-    - Added `BED_OUTPUT_INIT` in order to control configuration of the Bed output pin settings.
-    - Defaults to `{kNormal, fet_pin3_freq}`.
-    - `EXTRUDER_1_FAN_PIN` for control of the temperature-enabled fan on extruder 1. (Only available on extruder 1 at the moment.)
-  - (*Experimental*) Analog input is now interpreted through one of various `ADCCircuit` objects.
-    - Three are provided currently: `ADCCircuitSimplePullup`, `ADCCircuitDifferentialPullup`, `ADCCircuitRawResistance`
-    - `Thermistor` and `PT100` objects no longer take the pullup value in their constructor, but instead take a pointer to an `ADCCircuit` object.
-  - `Thermistor` and `PT100` objects no longer assume an `ADCPin` is used, but now take the type that conforms to the `ADCPin` interface as a template argument.
-  - **TODO:** Make more of these configurable at runtime. Separate the ADC input from the consumer, and allow other things than temperature to read it.
-  - PID+FF control adds feed-forward (FF) to adjust the output to a reasonable minimum based on heat loss dues to room temperature.
-    - This can be effectively disabled, making the controller a PID controller, by setting the F value to `0.0`.
-    - **Warning** setting this value too high can cause thermal runaway. Set this value conservatively (low), since there's currently no ambient temperature, and the actual heat loss may be less than computed. This will be magnified by another heater (such as that on a heat bed of a 3D printer) in close proximity.
-
+<details><summary><strong><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">温度控制增强</font></font></strong></summary>
+<ul dir="auto">
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">添加了以下设置定义：
+</font></font><ul dir="auto">
+<li><code>HAS_TEMPERATURE_SENSOR_1</code><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">，</font></font><code>HAS_TEMPERATURE_SENSOR_2</code><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">， 和</font></font><code>HAS_TEMPERATURE_SENSOR_3</code></li>
+<li><code>EXTRUDER_1_OUTPUT_PIN</code><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">，</font></font><code>EXTRUDER_2_OUTPUT_PIN</code><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">， 和</font></font><code>BED_OUTPUT_PIN</code></li>
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">添加</font></font><code>BED_OUTPUT_INIT</code><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">是为了控制 Bed 输出引脚设置的配置。</font></font></li>
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">默认为</font></font><code>{kNormal, fet_pin3_freq}</code><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">.</font></font></li>
+<li><code>EXTRUDER_1_FAN_PIN</code><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">用于控制挤出机 1 上的温度驱动风扇。（目前仅适用于挤出机 1。）</font></font></li>
+</ul>
+</li>
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">（</font></font><em><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">实验</font></font></em><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">）模拟输入现在通过各种对象之一进行解释</font></font><code>ADCCircuit</code><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">。
+</font></font><ul dir="auto">
+<li><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">目前提供三种：</font></font><code>ADCCircuitSimplePullup</code><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">、</font></font><code>ADCCircuitDifferentialPullup</code><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">、</font></font><code>ADCCircuitRawResistance</code></li>
+<li><code>Thermistor</code><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">并且</font></font><code>PT100</code><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">对象不再在其构造函数中获取上拉值，而是获取指向</font></font><code>ADCCircuit</code><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">对象的指针。</font></font></li>
+</ul>
+</li>
+<li><code>Thermistor</code><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">并且</font></font><code>PT100</code><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">对象不再假定</font></font><code>ADCPin</code><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">使用 an ，而是现在采用符合</font></font><code>ADCPin</code><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">接口的类型作为模板参数。</font></font></li>
+<li><strong>TODO:</strong> Make more of these configurable at runtime. Separate the ADC input from the consumer, and allow other things than temperature to read it.</li>
+<li>PID+FF control adds feed-forward (FF) to adjust the output to a reasonable minimum based on heat loss dues to room temperature.
+<ul dir="auto">
+<li>This can be effectively disabled, making the controller a PID controller, by setting the F value to <code>0.0</code>.</li>
+<li><strong>Warning</strong> setting this value too high can cause thermal runaway. Set this value conservatively (low), since there's currently no ambient temperature, and the actual heat loss may be less than computed. This will be magnified by another heater (such as that on a heat bed of a 3D printer) in close proximity.</li>
+</ul>
+</li>
+</ul>
 </details>
-
-<details><summary><strong>TMC2130 JSON controls</strong></summary>
-
-  - Added the following setting keys to the motors (`1` - `6`):
-    - `ts`   - *(R)* get the value of the `TSTEP` register
-    - `pth`  - *(R/W)* get/set the value of the `TPWMTHRS` register
-    - `cth`  - *(R/W)* get/set the value of the `TCOOLTHRS` register
-    - `hth`  - *(R/W)* get/set the value of the `THIGH` register
-    - `sgt`  - *(R/W)* get/set the value of the `sgt` value of the `COOLCONF` register
-    - `sgr`  - *(R)* get the `SG_RESULT` value of the `DRV_STATUS` register
-    - `csa`  - *(R)* get the `CS_ACTUAL` value of the `DRV_STATUS` register
-    - `sgs`  - *(R)* get the `stallGuard` value of the `DRV_STATUS` register
-    - `tbl`  - *(R/W)* get/set the `TBL` value of the `CHOPCONF` register
-    - `pgrd` - *(R/W)* get/set the `PWM_GRAD` value of the `PWMCONF` register
-    - `pamp` - *(R/W)* get/set the `PWM_AMPL` value of the `PWMCONF` register
-    - `hend` - *(R/W)* get/set the `HEND_OFFSET` value of the `CHOPCONF` register
-    - `hsrt` - *(R/W)* get/set the `HSTRT/TFD012` value of the `CHOPCONF` register
-    - `smin` - *(R/W)* get/set the `semin` value of the `COOLCONF` register
-    - `smax` - *(R/W)* get/set the `semax` value of the `COOLCONF` register
-    - `sup`  - *(R/W)* get/set the `seup` value of the `COOLCONF` register
-    - `sdn`  - *(R/W)* get/set the `sedn` value of the `COOLCONF` register
-  - Note that all gets retrieve the last cached value.
+<details><summary><strong><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">TMC2130 JSON 控件</font></font></strong></summary>
+<ul dir="auto">
+<li>Added the following setting keys to the motors (<code>1</code> - <code>6</code>):
+<ul dir="auto">
+<li><code>ts</code>   - <em>(R)</em> get the value of the <code>TSTEP</code> register</li>
+<li><code>pth</code>  - <em>(R/W)</em> get/set the value of the <code>TPWMTHRS</code> register</li>
+<li><code>cth</code>  - <em>(R/W)</em> get/set the value of the <code>TCOOLTHRS</code> register</li>
+<li><code>hth</code>  - <em>(R/W)</em> get/set the value of the <code>THIGH</code> register</li>
+<li><code>sgt</code>  - <em>(R/W)</em> get/set the value of the <code>sgt</code> value of the <code>COOLCONF</code> register</li>
+<li><code>sgr</code>  - <em>(R)</em> get the <code>SG_RESULT</code> value of the <code>DRV_STATUS</code> register</li>
+<li><code>csa</code>  - <em>(R)</em> get the <code>CS_ACTUAL</code> value of the <code>DRV_STATUS</code> register</li>
+<li><code>sgs</code>  - <em>(R)</em> get the <code>stallGuard</code> value of the <code>DRV_STATUS</code> register</li>
+<li><code>tbl</code>  - <em>(R/W)</em> get/set the <code>TBL</code> value of the <code>CHOPCONF</code> register</li>
+<li><code>pgrd</code> - <em>(R/W)</em> get/set the <code>PWM_GRAD</code> value of the <code>PWMCONF</code> register</li>
+<li><code>pamp</code> - <em>(R/W)</em> get/set the <code>PWM_AMPL</code> value of the <code>PWMCONF</code> register</li>
+<li><code>hend</code> - <em>(R/W)</em> get/set the <code>HEND_OFFSET</code> value of the <code>CHOPCONF</code> register</li>
+<li><code>hsrt</code> - <em>(R/W)</em> get/set the <code>HSTRT/TFD012</code> value of the <code>CHOPCONF</code> register</li>
+<li><code>smin</code> - <em>(R/W)</em> get/set the <code>semin</code> value of the <code>COOLCONF</code> register</li>
+<li><code>smax</code> - <em>(R/W)</em> get/set the <code>semax</code> value of the <code>COOLCONF</code> register</li>
+<li><code>sup</code>  - <em>(R/W)</em> get/set the <code>seup</code> value of the <code>COOLCONF</code> register</li>
+<li><code>sdn</code>  - <em>(R/W)</em> get/set the <code>sedn</code> value of the <code>COOLCONF</code> register</li>
+</ul>
+</li>
+<li>Note that all gets retrieve the last cached value.</li>
+</ul>
 </details>
-
-<details><summary><strong>Core XY Kinematics Support</strong></summary>
-
-  - Enabled at compile-time by setting the `KINEMATICS` define to `KINE_CORE_XY`
-    - The default (and only other valid value) for `KINEMATICS` is `KINE_CARTESIAN`
-  - Note that the X and Y axes must have the same settings, or the behavior is undefined.
-  - For the sake of motor mapping, the values `AXIS_COREXY_A` and `AXIS_COREXY_B` have been created.
-  - Example usage:
-  ```c++
-  #define M1_MOTOR_MAP                AXIS_COREXY_A           // 1ma
-  #define M2_MOTOR_MAP                AXIS_COREXY_B           // 2ma
-  ```
+<details><summary><strong><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">核心 XY 运动学支持</font></font></strong></summary>
+<ul dir="auto">
+<li>Enabled at compile-time by setting the <code>KINEMATICS</code> define to <code>KINE_CORE_XY</code>
+<ul dir="auto">
+<li>The default (and only other valid value) for <code>KINEMATICS</code> is <code>KINE_CARTESIAN</code></li>
+</ul>
+</li>
+<li>Note that the X and Y axes must have the same settings, or the behavior is undefined.</li>
+<li>For the sake of motor mapping, the values <code>AXIS_COREXY_A</code> and <code>AXIS_COREXY_B</code> have been created.</li>
+<li>Example usage:</li>
+</ul>
+<div class="highlight highlight-source-c++ notranslate position-relative overflow-auto" dir="auto"><pre>#<span class="pl-k">define</span> <span class="pl-en">M1_MOTOR_MAP</span>                AXIS_COREXY_A           <span class="pl-c"><span class="pl-c">//</span> 1ma</span>
+#<span class="pl-k">define</span> <span class="pl-en">M2_MOTOR_MAP</span>                AXIS_COREXY_B           <span class="pl-c"><span class="pl-c">//</span> 2ma</span></pre><div class="zeroclipboard-container">
+    <clipboard-copy aria-label="Copy" class="ClipboardButton btn btn-invisible js-clipboard-copy m-2 p-0 tooltipped-no-delay d-flex flex-justify-center flex-items-center" data-copy-feedback="Copied!" data-tooltip-direction="w" value="#define M1_MOTOR_MAP                AXIS_COREXY_A           // 1ma
+#define M2_MOTOR_MAP                AXIS_COREXY_B           // 2ma" tabindex="0" role="button">
+      <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" data-view-component="true" class="octicon octicon-copy js-clipboard-copy-icon">
+    <path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"></path>
+</svg>
+      <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" data-view-component="true" class="octicon octicon-check js-clipboard-check-icon color-fg-success d-none">
+    <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"></path>
+</svg>
+    </clipboard-copy>
+  </div></div>
 </details>
-
-<details><summary><strong>Planner settings control from board files</strong></summary>
-
-  - The defines `PLANNER_QUEUE_SIZE` and `MIN_SEGMENT_MS` are now set in the `board/*/hardware.h` files.
-  - `PLANNER_QUEUE_SIZE` sets the size of the planner buffer array.
-    - Default value if not defined: `48`
-  - `MIN_SEGMENT_MS` sets the minimum segment time (in milliseconds) and several other settings that are comuted based on it.
-    - Default values if not defined: `0.75`
-    - A few of the computed values are shown:
-    ```c++
-    #define NOM_SEGMENT_MS              ((float)MIN_SEGMENT_MS*2.0)        // nominal segment ms (at LEAST MIN_SEGMENT_MS * 2)
-    #define MIN_BLOCK_MS                ((float)MIN_SEGMENT_MS*2.0)        // minimum block (whole move) milliseconds
-    ```
+<details><summary><strong><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">从板文件控制规划器设置</font></font></strong></summary>
+<ul dir="auto">
+<li>The defines <code>PLANNER_QUEUE_SIZE</code> and <code>MIN_SEGMENT_MS</code> are now set in the <code>board/*/hardware.h</code> files.</li>
+<li><code>PLANNER_QUEUE_SIZE</code> sets the size of the planner buffer array.
+<ul dir="auto">
+<li>Default value if not defined: <code>48</code></li>
+</ul>
+</li>
+<li><code>MIN_SEGMENT_MS</code> sets the minimum segment time (in milliseconds) and several other settings that are comuted based on it.
+<ul dir="auto">
+<li>Default values if not defined: <code>0.75</code></li>
+<li>A few of the computed values are shown:</li>
+</ul>
+<div class="highlight highlight-source-c++ notranslate position-relative overflow-auto" dir="auto"><pre>#<span class="pl-k">define</span> <span class="pl-en">NOM_SEGMENT_MS</span>              ((<span class="pl-k">float</span>)MIN_SEGMENT_MS*<span class="pl-c1">2.0</span>)        <span class="pl-c"><span class="pl-c">//</span> nominal segment ms (at LEAST MIN_SEGMENT_MS * 2)</span>
+#<span class="pl-k">define</span> <span class="pl-en">MIN_BLOCK_MS</span>                ((<span class="pl-k">float</span>)MIN_SEGMENT_MS*<span class="pl-c1">2.0</span>)        <span class="pl-c"><span class="pl-c">//</span> minimum block (whole move) milliseconds</span></pre><div class="zeroclipboard-container">
+    <clipboard-copy aria-label="Copy" class="ClipboardButton btn btn-invisible js-clipboard-copy m-2 p-0 tooltipped-no-delay d-flex flex-justify-center flex-items-center" data-copy-feedback="Copied!" data-tooltip-direction="w" value="#define NOM_SEGMENT_MS              ((float)MIN_SEGMENT_MS*2.0)        // nominal segment ms (at LEAST MIN_SEGMENT_MS * 2)
+#define MIN_BLOCK_MS                ((float)MIN_SEGMENT_MS*2.0)        // minimum block (whole move) milliseconds" tabindex="0" role="button">
+      <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" data-view-component="true" class="octicon octicon-copy js-clipboard-copy-icon">
+    <path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"></path>
+</svg>
+      <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" data-view-component="true" class="octicon octicon-check js-clipboard-check-icon color-fg-success d-none">
+    <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"></path>
+</svg>
+    </clipboard-copy>
+  </div></div>
+</li>
+</ul>
 </details>
-
-<details><summary><strong>Experimental traverse at high jerk</strong></summary>
-
-  - The new define `TRAVERSE_AT_HIGH_JERK` can be set to `true`, making traverse (`G0`) moves (including `E`-only moves in Marlin-flavored gcode mode) will use the jerk-high (`jh`) settings.
-    - If set to `false` or undefined `G0` moves will continue to use the jerk-max (`jm`) settings that feed (`G1`) moves use.
+<details><summary><strong><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">高冲击力实验横动</font></font></strong></summary>
+<ul dir="auto">
+<li>The new define <code>TRAVERSE_AT_HIGH_JERK</code> can be set to <code>true</code>, making traverse (<code>G0</code>) moves (including <code>E</code>-only moves in Marlin-flavored gcode mode) will use the jerk-high (<code>jh</code>) settings.
+<ul dir="auto">
+<li>If set to <code>false</code> or undefined <code>G0</code> moves will continue to use the jerk-max (<code>jm</code>) settings that feed (<code>G1</code>) moves use.</li>
+</ul>
+</li>
+</ul>
 </details>
-
-<details><summary><strong>PID+FF - added feed forward</strong></summary>
-
-  - There is a new JSON value `f` in each `pid`*`n`* object (read-only, for reporting) as well as an `f` setting in the `he`*`n`* objects (for control).
-    - This is controlled in the settings file via `H`*`n`*`_DEFAULT_F`, such as `H1_DEFAULT_F`. Default value is `0.0`.
-    - This is a value that is multiplied to by current temp - 21 and added to the current computed output.
-    - **Warning!** Setting this value too high can result in thermal runaway. Set it conservatively (low) or disable it completely if in doubt.
-    - Set the `he`*`n`*`f` value to `0.0` to effectively disable feed-forward.
-
+<details><summary><strong><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">PID+FF - 添加前馈</font></font></strong></summary>
+<ul dir="auto">
+<li>There is a new JSON value <code>f</code> in each <code>pid</code><em><code>n</code></em> object (read-only, for reporting) as well as an <code>f</code> setting in the <code>he</code><em><code>n</code></em> objects (for control).
+<ul dir="auto">
+<li>This is controlled in the settings file via <code>H</code><em><code>n</code></em><code>_DEFAULT_F</code>, such as <code>H1_DEFAULT_F</code>. Default value is <code>0.0</code>.</li>
+<li>This is a value that is multiplied to by current temp - 21 and added to the current computed output.</li>
+<li><strong>Warning!</strong> Setting this value too high can result in thermal runaway. Set it conservatively (low) or disable it completely if in doubt.</li>
+<li>Set the <code>he</code><em><code>n</code></em><code>f</code> value to <code>0.0</code> to effectively disable feed-forward.</li>
+</ul>
+</li>
+</ul>
 </details>
-
-<details><summary><strong>Output setting as soon as possible</strong></summary>
-
-  - At board initialization, the output value on each of the `out` objects is set to whatever the pin is configured to be "inactive." This is based on the settings file `DO`*n*`_MODE` setting.
-  - For example, if `DO10_MODE == IO_ACTIVE_LOW` then the pin at `DO10` is initialized as `HIGH` at board setup. This happen even before the `main()` function starts, shortly after the GPIO clocks are enabled for each port.
+<details><summary><strong><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">尽快设置输出</font></font></strong></summary>
+<ul dir="auto">
+<li>At board initialization, the output value on each of the <code>out</code> objects is set to whatever the pin is configured to be "inactive." This is based on the settings file <code>DO</code><em>n</em><code>_MODE</code> setting.</li>
+<li>For example, if <code>DO10_MODE == IO_ACTIVE_LOW</code> then the pin at <code>DO10</code> is initialized as <code>HIGH</code> at board setup. This happen even before the <code>main()</code> function starts, shortly after the GPIO clocks are enabled for each port.</li>
+</ul>
 </details>
+</article></div>
